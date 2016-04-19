@@ -1,0 +1,285 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 44;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B52D79971137802C00DCB0A0 /* mexHID.c in Sources */ = {isa = PBXBuildFile; fileRef = B52D79961137802C00DCB0A0 /* mexHID.c */; };
+		B52D799F1137818B00DCB0A0 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B52D799E1137818B00DCB0A0 /* CoreFoundation.framework */; };
+		B52D79A31137819500DCB0A0 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B52D79A21137819500DCB0A0 /* IOKit.framework */; };
+		B52D79C61137856900DCB0A0 /* mexHID-OSX.c in Sources */ = {isa = PBXBuildFile; fileRef = B52D79C21137856900DCB0A0 /* mexHID-OSX.c */; };
+		B52D79C71137856900DCB0A0 /* mexHID-OSX.h in Headers */ = {isa = PBXBuildFile; fileRef = B52D79C31137856900DCB0A0 /* mexHID-OSX.h */; };
+		B52D79C91137856900DCB0A0 /* mexHID.h in Headers */ = {isa = PBXBuildFile; fileRef = B52D79C51137856900DCB0A0 /* mexHID.h */; };
+		B58783C2114EA4F40012E7C3 /* mexHID.mexmaci in CopyFiles */ = {isa = PBXBuildFile; fileRef = D2AAC0630554660B00DB518D /* mexHID.mexmaci */; };
+		B5A75804115D70EE00D1FA9F /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5A75803115D70EE00D1FA9F /* CoreServices.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B58783C5114EA5020012E7C3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = ../../..;
+			dstSubfolderSpec = 16;
+			files = (
+				B58783C2114EA4F40012E7C3 /* mexHID.mexmaci in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		B52D79961137802C00DCB0A0 /* mexHID.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mexHID.c; path = ../mexHID.c; sourceTree = SOURCE_ROOT; };
+		B52D799E1137818B00DCB0A0 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
+		B52D79A21137819500DCB0A0 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = /System/Library/Frameworks/IOKit.framework; sourceTree = "<absolute>"; };
+		B52D79C21137856900DCB0A0 /* mexHID-OSX.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "mexHID-OSX.c"; sourceTree = "<group>"; };
+		B52D79C31137856900DCB0A0 /* mexHID-OSX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "mexHID-OSX.h"; sourceTree = "<group>"; };
+		B52D79C51137856900DCB0A0 /* mexHID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mexHID.h; path = ../mexHID.h; sourceTree = "<group>"; };
+		B5A75803115D70EE00D1FA9F /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = /System/Library/Frameworks/CoreServices.framework; sourceTree = "<absolute>"; };
+		D2AAC0630554660B00DB518D /* mexHID.mexmaci */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mexHID.mexmaci; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D289988505E68E00004EDB86 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B52D799F1137818B00DCB0A0 /* CoreFoundation.framework in Frameworks */,
+				B52D79A31137819500DCB0A0 /* IOKit.framework in Frameworks */,
+				B5A75804115D70EE00D1FA9F /* CoreServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* mexHID-OSX */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+				B52D799E1137818B00DCB0A0 /* CoreFoundation.framework */,
+				B52D79A21137819500DCB0A0 /* IOKit.framework */,
+				B5A75803115D70EE00D1FA9F /* CoreServices.framework */,
+			);
+			name = "mexHID-OSX";
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				B52D79C21137856900DCB0A0 /* mexHID-OSX.c */,
+				B52D79C31137856900DCB0A0 /* mexHID-OSX.h */,
+				B52D79C51137856900DCB0A0 /* mexHID.h */,
+				B52D79961137802C00DCB0A0 /* mexHID.c */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D2AAC0630554660B00DB518D /* mexHID.mexmaci */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D2AAC0600554660B00DB518D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B52D79C71137856900DCB0A0 /* mexHID-OSX.h in Headers */,
+				B52D79C91137856900DCB0A0 /* mexHID.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D2AAC0620554660B00DB518D /* mexHID-OSX */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB914A08733D8E0010E9CD /* Build configuration list for PBXNativeTarget "mexHID-OSX" */;
+			buildPhases = (
+				D2AAC0600554660B00DB518D /* Headers */,
+				D2AAC0610554660B00DB518D /* Sources */,
+				D289988505E68E00004EDB86 /* Frameworks */,
+				B58783C5114EA5020012E7C3 /* CopyFiles */,
+				B574F028125D21FB0030AED6 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "mexHID-OSX";
+			productName = "mexHID-OSX";
+			productReference = D2AAC0630554660B00DB518D /* mexHID.mexmaci */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB914E08733D8E0010E9CD /* Build configuration list for PBXProject "mexHID-OSX" */;
+			compatibilityVersion = "Xcode 3.0";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* mexHID-OSX */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D2AAC0620554660B00DB518D /* mexHID-OSX */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B574F028125D21FB0030AED6 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp $PROJECT_DIR/../$PRODUCT_NAME.$EXECUTABLE_EXTENSION $PROJECT_DIR/../$PRODUCT_NAME.$ALTERNATE_EXECUTABLE_EXTENSION";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D2AAC0610554660B00DB518D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B52D79971137802C00DCB0A0 /* mexHID.c in Sources */,
+				B52D79C61137856900DCB0A0 /* mexHID-OSX.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB914B08733D8E0010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALTERNATE_EXECUTABLE_EXTENSION = mexmaci64;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				DEPLOYMENT_LOCATION = NO;
+				DSTROOT = "";
+				EXECUTABLE_EXTENSION = mexmaci;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = 4.0;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				HEADER_SEARCH_PATHS = "$MATLAB_ROOT/extern/include/**";
+				INSTALL_PATH = "";
+				KEEP_PRIVATE_EXTERNS = NO;
+				LD_GENERATE_MAP_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MATLAB_ROOT = /Applications/MATLAB_R2009a.app;
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mexHID;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		1DEB914C08733D8E0010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALTERNATE_EXECUTABLE_EXTENSION = mexmaci64;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_LOCATION = NO;
+				DSTROOT = "";
+				EXECUTABLE_EXTENSION = mexmaci;
+				EXECUTABLE_PREFIX = "";
+				GCC_MODEL_TUNING = G5;
+				GCC_VERSION = 4.0;
+				GENERATE_MASTER_OBJECT_FILE = NO;
+				HEADER_SEARCH_PATHS = "$MATLAB_ROOT/extern/include/**";
+				INSTALL_PATH = "";
+				KEEP_PRIVATE_EXTERNS = NO;
+				LD_GENERATE_MAP_FILE = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MATLAB_ROOT = /Applications/MATLAB_R2009a.app;
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mexHID;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		1DEB914F08733D8E0010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Debug;
+		};
+		1DEB915008733D8E0010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1 = "x86_64 i386 ppc";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB914A08733D8E0010E9CD /* Build configuration list for PBXNativeTarget "mexHID-OSX" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB914B08733D8E0010E9CD /* Debug */,
+				1DEB914C08733D8E0010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB914E08733D8E0010E9CD /* Build configuration list for PBXProject "mexHID-OSX" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB914F08733D8E0010E9CD /* Debug */,
+				1DEB915008733D8E0010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
