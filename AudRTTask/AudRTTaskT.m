@@ -1,5 +1,7 @@
 function [maintask, list] = AudRTTaskT(effort, distractor_on)
 %AudRT Task, [task, list] = AudRTTaskT(effort, distractor)
+%by M.Kabir. E-mail at kabir.naim@gmail.com for bugfixes.
+
 %Effort = 0 is a passive task.
 %Effort = 1 is a single-button press task.
 %Effort = 2 is a patterned button press task.
