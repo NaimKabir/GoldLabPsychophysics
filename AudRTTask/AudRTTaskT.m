@@ -31,8 +31,8 @@ end
 
 %Setting important values
 fixtime = 2; %fixation time in seconds
-trials = 300;
-H1 = 0.2;
+trials = 15;
+H1 = 0.5;
 H2 = 0.2;
 
 %Getting sound sequence
@@ -390,17 +390,24 @@ function waitForChoiceKey(list)
     counter = list{'Counter'}{'Trial'};
     ui = list{'Input'}{'Controller'};
     player = list{'Stimulus'}{'Player'};
-    playsecs = length(player.waveform)./player.sampleFrequency;
+    playsecs = length(player.waveform)/player.sampleFrequency;
     
     ui.flushData
     
     %Initializing variable
     press = '';
     
-    disp('Waiting...')
     %Waiting for keypress
     tic 
-    while ~strcmp(press, 'left') && ~strcmp(press, 'right') || toc < playsecs
+    while ~strcmp(press, 'left') && ~strcmp(press, 'right')
+        %Break loop is complete sound has played and move to next trial
+        if toc > playsecs
+            choice = NaN;
+            timestamp = NaN;
+            break
+        end
+        
+        %Check for button press
         press = '';
         read(ui);
         [a, b, eventname, d] = ui.getHappeningEvent();
@@ -408,12 +415,10 @@ function waitForChoiceKey(list)
             press = eventname;
         end
     end
-    
-    disp('Pressed')
-    
+
     if strcmp(press, 'left')
         choice = 1;
-    else
+    elseif strcmp(press, 'right')
         choice = 2;
     end
     
@@ -439,7 +444,7 @@ function waitForChoiceKeyPattern(list)
     pattern = list{'Effort'}{'Pattern'};
     pwindow = list{'Effort'}{'PatternWindow'};
     player = list{'Stimulus'}{'Player'};
-    playsecs = length(player.waveform)./player.sampleFrequency;
+    playsecs = length(player.waveform)/player.sampleFrequency;
     
     [depth, width] = size(pattern);
     
@@ -449,11 +454,17 @@ function waitForChoiceKeyPattern(list)
     isPattern = 0;
     isUnderTime = 0;
     
-    disp('Waiting...')
     %Waiting for keypress
-  
     tic 
-    while isPattern == 0 || isUnderTime == 0 || toc < playsecs
+    while isPattern == 0 || isUnderTime == 0
+                
+        %Break loop if complete sound has played and move to next trial
+        if toc > playsecs
+            choice = NaN; 
+            timestamp = NaN;
+            break
+        end
+        
         read(ui);
         loc_history = ui.history;
         loc_history = loc_history(loc_history(:,2) > 1, :); %Getting only rows with button presses
@@ -471,26 +482,29 @@ function waitForChoiceKeyPattern(list)
             timerng = range(loc_times(loc_idx));
             isUnderTime = timerng < pwindow;
             
-            if isPattern > 0 & isUnderTime > 0
+            if isPattern > 0 && isUnderTime > 0
                  if all(triplet == pattern(1,:))
                      choice = 1;
-                 else
+                 elseif all(triplet == pattern(2,:)) 
                      choice = 2;
                  end 
                  
+                %Getting choice timestamp
+                timestamp = loc_times(loc_idx(1)); %Getting time of first press in pattern
+                
                 %Break the for-loop. No need to keep searching for pattern.  
                 break
             end
+            
         end
+        
     end
     
     %Updating choices list
     choices(counter+1) = choice;
     list{'Input'}{'Choices'} = choices;
     
-    %Getting choice timestamp
-    timestamp = loc_times(loc_idx(1)); %Getting time of first press in pattern
-    
+    %Storing choice timestamp
     timestamps = list{'Timestamps'}{'Choices'};
     timestamps(counter) = timestamp;
     list{'Timestamps'}{'Choices'} = timestamps;
@@ -589,9 +603,14 @@ function distractfunc(list)
     
     %Give player characteristics
     maxwait = 7; %maximum possible wait time before a new sound plays
-    player.waitTime =  min(maxwait, exprnd(1./0.5)); 
     player.frequency = rand*1000;
-    player.intensity = 0.5;
+    
+    %randomly assign whether or not noise will play
+    playprobability = 0.2;
+    willplay = rand;
+    willplay = rand <= playprobability;
+    
+    player.intensity = rand*willplay;
     
     player.prepareToPlay
     
