@@ -1,5 +1,11 @@
-function [maintask, list] = AudRTTaskT()
-%AudRT Task
+function [maintask, list] = AudRTTaskT(effort, distractor_on)
+%AudRT Task, [task, list] = AudRTTaskT(effort, distractor)
+%Effort = 0 is a passive task.
+%Effort = 1 is a single-button press task.
+%Effort = 2 is a patterned button press task.
+%Distractor_on = 0 is no distractor
+%Distractor_on = 1 means distractor sounds WILL play.
+
 %% Housekeeping
 %Setting up the screen
 sc=dotsTheScreen.theObject;
@@ -14,6 +20,14 @@ list = topsGroupedList;
 
 %Subject ID
 subj_id = input('Subject ID: ','s');
+
+%IV Parameters
+if nargin < 1
+    effort = 0; %0 is a passive task, 1 is a button press, 2 is a pattern press, 3 is long hold
+    distractor_on = 0; %0 for no distractor, 1 for distractor
+elseif nargin < 2
+    distractor_on = 0;
+end
 
 %Setting important values
 fixtime = 2; %fixation time in seconds
@@ -97,6 +111,36 @@ list{'Input'}{'Choices'} = zeros(1,trials);
     
     list{'Eye'}{'Fixtime'} = fixtime*60; %fixation time in terms of sample number
     
+    
+% DISTRACTOR
+% adds distraction tones throughout task
+    distractplayer = dotsPlayableNote();
+    distractplayer.duration = 0.1;
+    list{'Distractor'}{'Player'} = distractplayer;
+    list{'Distractor'}{'Playtimes'} = []; 
+    
+    distractor = topsCallList();
+    distractor.addCall({@distractfunc, list}, 'Play distractor sounds');
+
+% EFFORT
+% Modulate effort
+if effort == 0
+    effortFunction = @(x) passiveKey(x);
+elseif effort == 1
+    effortFunction = @(x) waitForChoiceKey(x);
+else
+    effortFunction = @(x) waitForChoiceKeyPattern(x);
+end
+
+%Passive listen parameters
+passivetime = 0.35; %Wait time for sound to stop
+list{'Effort'}{'PassiveTime'} = passivetime;
+
+%Pattern press parameters
+pattern = [2 4 2; 4 2 4]; %Top row is pattern to choose Left, bottom is Right
+list{'Effort'}{'Pattern'} = pattern;
+list{'Effort'}{'PatternWindow'} = 0.4; %Seconds in which the pattern must be completed
+
 %Functions that operate on List
 startsave(list);
     
@@ -257,7 +301,7 @@ readgaze.addCall({@gazelog, list}, 'Read gaze');
 Machine = topsStateMachine();
 stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
                  'CheckReady', {}, {@checkFixation list}, {}, 0, 'CheckReady';
-                 'Stimulus', {@playstim list}, {}, {@waitForChoiceKey list}, 0, 'Exit';
+                 'Stimulus', {@playstim list}, {}, {effortFunction list}, 0, 'Exit';
                  'Exit', {@stopstim list}, {}, {}, fixtime, ''};
              
     Machine.addMultipleStates(stimList);
@@ -267,6 +311,10 @@ contask.addChild(ensemble);
 contask.addChild(readui);
 contask.addChild(readgaze);
 contask.addChild(Machine);
+
+if distractor_on == 1
+    contask.addChild(distractor)
+end
 
 maintask = topsTreeNode();
 maintask.iterations = trials;
@@ -317,7 +365,7 @@ function playstim(list)
     
     %Play sound
     player = list{'Stimulus'}{'Player'};
-    player.waveform = [waveform waveform waveform waveform waveform];
+    player.waveform = [waveform waveform waveform waveform waveform waveform];
     player.play;
     
     %Get timestamp
@@ -341,6 +389,8 @@ function waitForChoiceKey(list)
     choices = list{'Input'}{'Choices'};
     counter = list{'Counter'}{'Trial'};
     ui = list{'Input'}{'Controller'};
+    player = list{'Stimulus'}{'Player'};
+    playsecs = length(player.waveform)./player.sampleFrequency;
     
     ui.flushData
     
@@ -349,7 +399,8 @@ function waitForChoiceKey(list)
     
     disp('Waiting...')
     %Waiting for keypress
-    while ~strcmp(press, 'left') && ~strcmp(press, 'right')
+    tic 
+    while ~strcmp(press, 'left') && ~strcmp(press, 'right') || toc < playsecs
         press = '';
         read(ui);
         [a, b, eventname, d] = ui.getHappeningEvent();
@@ -379,6 +430,78 @@ function waitForChoiceKey(list)
     timestamps(counter) = timestamp;
     list{'Timestamps'}{'Choices'} = timestamps;
 end
+
+function waitForChoiceKeyPattern(list)
+    % Getting list items
+    choices = list{'Input'}{'Choices'};
+    counter = list{'Counter'}{'Trial'};
+    ui = list{'Input'}{'Controller'};
+    pattern = list{'Effort'}{'Pattern'};
+    pwindow = list{'Effort'}{'PatternWindow'};
+    player = list{'Stimulus'}{'Player'};
+    playsecs = length(player.waveform)./player.sampleFrequency;
+    
+    [depth, width] = size(pattern);
+    
+    ui.flushData
+    
+    %Initializing variables
+    isPattern = 0;
+    isUnderTime = 0;
+    
+    disp('Waiting...')
+    %Waiting for keypress
+  
+    tic 
+    while isPattern == 0 || isUnderTime == 0 || toc < playsecs
+        read(ui);
+        loc_history = ui.history;
+        loc_history = loc_history(loc_history(:,2) > 1, :); %Getting only rows with button presses
+        
+        %Check if the second column contains a matching pattern
+        loc_vals = loc_history(:,2);
+        loc_times = loc_history(:,3);
+        for ii = 0:length(loc_vals)-width
+            i = length(loc_vals) - ii; %Indexing so we get recent patterns first
+            loc_idx = i-width+1:i;
+            triplet = loc_vals(loc_idx)';
+            isPattern = all(triplet == pattern(1,:) | triplet == pattern(2,:)); 
+            
+            %Checking that patern was pressed within the time window
+            timerng = range(loc_times(loc_idx));
+            isUnderTime = timerng < pwindow;
+            
+            if isPattern > 0 & isUnderTime > 0
+                 if all(triplet == pattern(1,:))
+                     choice = 1;
+                 else
+                     choice = 2;
+                 end 
+                 
+                %Break the for-loop. No need to keep searching for pattern.  
+                break
+            end
+        end
+    end
+    
+    %Updating choices list
+    choices(counter+1) = choice;
+    list{'Input'}{'Choices'} = choices;
+    
+    %Getting choice timestamp
+    timestamp = loc_times(loc_idx(1)); %Getting time of first press in pattern
+    
+    timestamps = list{'Timestamps'}{'Choices'};
+    timestamps(counter) = timestamp;
+    list{'Timestamps'}{'Choices'} = timestamps;
+end
+
+function passiveKey(list)
+    pausetime = list{'Effort'}{'PassiveTime'};
+    %No button press required here. Will simply wait a set time and cont.
+    WaitSecs(pausetime);
+end
+
 
 function waitForCheckKey(list)
     % Getting list items
@@ -458,4 +581,23 @@ function startsave(list)
     end
     
     list{'Subject'}{'Savename'} = savename;
+end
+
+function distractfunc(list)
+    %Import player
+    player = list{'Distractor'}{'Player'};
+    
+    %Give player characteristics
+    maxwait = 7; %maximum possible wait time before a new sound plays
+    player.waitTime =  min(maxwait, exprnd(1./0.5)); 
+    player.frequency = rand*1000;
+    player.intensity = 0.5;
+    
+    player.prepareToPlay
+    
+    %Play sound
+    player.play
+    
+    %Store time
+    list{'Distractor'}{'Playtimes'} = [list{'Distractor'}{'Playtimes'}, player.lastPlayTime];
 end

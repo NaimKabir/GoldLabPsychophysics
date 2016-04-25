@@ -1,7 +1,7 @@
 %% AudRT Task Run
 
 %Create task/list
-[task, list] = AudRTTaskT();
+[task, list] = AudRTTaskT(2, 0);
 
 %Open window and run
 dotsTheScreen.openWindow();
