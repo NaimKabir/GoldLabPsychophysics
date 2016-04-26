@@ -1,4 +1,4 @@
-# Audio Reaction Time Text
+# Audio Reaction Time Task
 
 **FUNCTION:** This is an audio reaction time task. Sounds will randomly play from the left or right sides on every trial, and the participant must correctly choose where the sound came from. Probability of playing from each side is dictated by a Markov Chain: there is one Hazard Rate (H1) that dictates probability of switching from the left side to the right side on the next trial, and another Hazard Rate (H2) that dictates switching from right side to left side on the next trial.
 
