@@ -10,16 +10,18 @@ Additional twists:
 
 **HOW TO USE:**
 
-%General form is.
-[task, list] = AudRTTaskT(effort, distractor_on)
+General form is: [task, list] = AudRTTaskT(effort, distractor_on). The ‘task’ is the experiment that is actually run. The ‘list’ is what actually stores all the data.
 
-%Effort = 0 is a passive task, Effort = 1 needs a single button press to report a side, Effort = 2 requires a combo to choose a side.
-%distractor_on = 0 means no distractor. distractor_on = 1 turns on the distractor.
+Effort = 0 is a passive task, Effort = 1 needs a single button press to report a side, Effort = 2 requires a combo to choose a side.
 
-%To create a task that requires a combo press and has a combo:
+distractor_on = 0 means no distractor. distractor_on = 1 turns on the distractor.
+
+To create a task that requires a combo press and has a combo:
+
 >> [task, list] = AudRTTaskT(2, 1)
 
-%Now we can run the task. First open the snow dots screen, then run, then close the screen.
+Now we can run the task. First open the snow dots screen, then run, then close the screen.
+
 >> dotsTheScreen.openWindow
 
 >> task.run
@@ -39,6 +41,8 @@ Additional twists:
 ***
 
 **OUTPUTS**:
+*All these outputs are stored in the ‘list’ structure.*
+
 * Reaction Times
 * Timestamps for all user input
 * Gaze data from both eyes: X,Y-Coordinates, Pupil Diameter, and Tobii Validity Code
