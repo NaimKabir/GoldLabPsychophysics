@@ -10,7 +10,7 @@ Additional twists:
 
 **HOW TO USE:**
 
-General form is: [task, list] = AudRTTaskT(effort, distractor_on). The ‘task’ is the experiment that is actually run. The ‘list’ is what actually stores all the data.
+General form is: [task, list] = AudRTTaskT(effort, distractor_on). The ‘task’ is the experiment that is actually run. The ‘list’ is what stores all the data.
 
 Effort = 0 is a passive task, Effort = 1 needs a single button press to report a side, Effort = 2 requires a combo to choose a side.
 
