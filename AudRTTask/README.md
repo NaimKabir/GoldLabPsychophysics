@@ -21,7 +21,9 @@ Additional twists:
 
 %Now we can run the task. First open the snow dots screen, then run, then close the screen.
 >> dotsTheScreen.openWindow
+
 >> task.run
+
 >> dotsTheScreen.closeWindow
 
 
