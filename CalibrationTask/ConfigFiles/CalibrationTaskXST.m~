@@ -259,7 +259,8 @@ synch.addCall({@pulser, list}, 'Send Synch Pulses');
 Machine = topsStateMachine();
 calibList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
                  'Draw', {}, {@calibpoint list}, {}, 0, 'Draw';
-                 'Early', {},{},{}, 2, '';
+                 'Change', {@changeup list}, {}, {}, 0, 'Feedback';
+                 'Early', {@earlypress list},{},{}, 2, '';
                  'Feedback', {}, {}, {}, 2, '';};
 Machine.addMultipleStates(calibList);
 Machine.clockFunction = @GetSecs; %Putting Machine on same clock as everything else
@@ -327,7 +328,6 @@ function string = calibpoint(list)
     
     text.x = X; %changing text params
     text.y = Y;
-    text.isVisible = true;
     
     %Drawing point
     drawT = dotsDrawable.drawFrame({fix});
@@ -342,6 +342,7 @@ function string = calibpoint(list)
             %Draw negative feedback
             text.color = [1 0 0];
             text.string = 'X';
+            text.isVisible = true;
     
             dotsDrawable.drawFrame({text});
         end
@@ -371,13 +372,12 @@ function string = calibpoint(list)
                  responseT = responseT(end)-changeT.onsetTime;
                  if responseT >= 0
                     RT = num2str(responseT);
-                    text.string = RT;
-                    text.color = [(responseT>targetRT) (responseT<=targetRT) 0];
                  else
-                    RT = 'X';
-                    text.string = RT;
-                    text.color = [1 0 0];
-                 end            
+                    RT = 'X'
+                 end
+                 text.string = RT;
+                 text.color = [(responseT>targetRT) (responseT<=targetRT) 0];
+                 
                  dotsDrawable.drawFrame({text});
              end
          end
@@ -395,6 +395,16 @@ function string = calibpoint(list)
     rtimes = list{'Output'}{'RT'};
     rtimes(counter) = responseT;
     list{'Output'}{'RT'} = rtimes;
+end
+
+function earlypress(list)
+   %Find this current trial iteration
+    counter = list{'Calib'}{'Counter'};
+    
+    %Import vital variables
+    Calib = list{'Calib'}{'Calib'};
+    morder = list{'Calib'}{'mOrder'};
+    donts = list{'Calib'}{'donts'};
 end
 
 function pulser(list)
