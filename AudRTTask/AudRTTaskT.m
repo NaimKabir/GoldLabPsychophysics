@@ -420,19 +420,23 @@ function waitForChoiceKey(list)
 
     if strcmp(press, 'left')
         choice = 1;
+        %Getting choice timestamp
+        timestamp = ui.history;
+        timestamp = timestamp(timestamp(:, 2) > 1, :); %Just to make sure I get a timestamp from a pressed key/button
+        timestamp = timestamp(end);
     elseif strcmp(press, 'right')
         choice = 2;
+        %Getting choice timestamp
+        timestamp = ui.history;
+        timestamp = timestamp(timestamp(:, 2) > 1, :); %Just to make sure I get a timestamp from a pressed key/button
+        timestamp = timestamp(end);
     end
     
     %Updating choices list
     choices(counter+1) = choice;
     list{'Input'}{'Choices'} = choices;
     
-    %Getting choice timestamp
-    timestamp = ui.history;
-    timestamp = timestamp(timestamp(:, 2) > 1, :); %Just to make sure I get a timestamp from a pressed key/button
-    timestamp = timestamp(end);
-    
+    %Updating timestamps list
     timestamps = list{'Timestamps'}{'Choices'};
     timestamps(counter) = timestamp;
     list{'Timestamps'}{'Choices'} = timestamps;

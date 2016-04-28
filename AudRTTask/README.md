@@ -16,7 +16,7 @@ Effort = 0 is a passive task, Effort = 1 needs a single button press to report a
 
 distractor_on = 0 means no distractor. distractor_on = 1 turns on the distractor.
 
-To create a task that requires a combo press and has a combo:
+To create a task that requires a combo press and has a distractor:
 
 >> [task, list] = AudRTTaskT(2, 1)
 
