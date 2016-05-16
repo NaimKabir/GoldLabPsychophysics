@@ -6,7 +6,7 @@ clear classes; close all;
 
 %Open window and run
 dotsTheScreen.openWindow();
-task.run;b 
+task.run;
 dotsTheScreen.closeWindow();
 
 %% Post processing
