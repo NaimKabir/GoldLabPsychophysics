@@ -59,4 +59,52 @@ disp('Calibration workflow stopped');
 
 close all;
 
+
+X = imread('TobiiDots.jpg');
+img=X; % Remove
+
+figure('menuBar', 'none', 'name', 'Image Display', 'keypressfcn', 'close;');
+image(img);
+axis equal;
+
+axes('Visible', 'off', 'Units', 'normalized',...
+    'Position', [0 0 1 1],...
+    'DrawMode','fast',...
+    'NextPlot','replacechildren');
+
+Calib.mondims = Calib.mondims1;
+set(gcf,'position', [Calib.mondims.x Calib.mondims.y Calib.mondims.width Calib.mondims.height]);
+
+xlim([1,Calib.mondims.width]); ylim([1,Calib.mondims.height]);axis ij;
+set(gca,'xtick',[]);set(gca,'ytick',[]);
+hold on;
+
+keyboard
+
+% *************************************************************************
+%
+% Start tracking and plot the gaze data read from the tracker.
+%
+% *************************************************************************
+
+tetio_startTracking;
+
+% leftEyeAll = [];
+% rightEyeAll = [];
+% timeStampAll = [];
+
+pauseTimeInSeconds = 0.01;
+durationInSeconds = 1.5*1;
+
+[leftEyeAll, rightEyeAll, timeStampAll] = DataCollect(durationInSeconds, pauseTimeInSeconds);
+
+tetio_stopTracking; 
+%tetio_disconnectTracker; 
+%tetio_cleanUp;
+
+DisplayData(leftEyeAll, rightEyeAll );
+
+
+disp('Program finished.');
+
 tetio_startTracking;

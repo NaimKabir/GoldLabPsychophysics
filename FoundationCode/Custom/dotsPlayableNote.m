@@ -9,6 +9,8 @@ classdef dotsPlayableNote < dotsPlayable
         waitTime = 0;
         
         ampenv;
+        
+        noise = 0;
     end
     
     properties (SetAccess = protected)
@@ -42,7 +44,13 @@ classdef dotsPlayableNote < dotsPlayable
              %Find cutoff point to cut off sound signal, in case it trails off or something
             fraction = 1; %to cutoff, make this go below 1
             cutoff = ceil(length(array)*fraction);
-            note = sin(2*pi*self.frequency*array(1:cutoff)).*ampenv(1:cutoff); %creating sound with specific frequency
+            note = sin(2*pi*self.frequency*array(1:cutoff));
+            
+            if self.noise > 0
+                note = note + ((randn(1,length(note))-0.5)*self.noise);
+            end
+            
+            note = note.*ampenv(1:cutoff); %creating sound with specific frequency
             note = [note; note];
             note = note*self.intensity;
             

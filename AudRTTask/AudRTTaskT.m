@@ -95,6 +95,8 @@ list{'Timestamps'}{'Choices'} = zeros(1,trials);
 
 % INPUT
 list{'Input'}{'Choices'} = zeros(1,trials);
+responsewindow = 3; %Time allowed to respond in, in seconds
+list{'Input'}{'ResponseWindow'} = responsewindow;
 
 % SYNCH
     daq = labJack();
@@ -117,8 +119,11 @@ list{'Input'}{'Choices'} = zeros(1,trials);
 % DISTRACTOR
 % adds distraction tones throughout task
     distractplayer = dotsPlayableNote();
-    distractplayer.duration = 0.1;
+    distractplayer.duration = 0.5;
+    distractplayer.noise = 0.35;
+    distractprobability = 0.15;
     list{'Distractor'}{'Player'} = distractplayer;
+    list{'Distractor'}{'Probability'} = distractprobability;
     list{'Distractor'}{'Playtimes'} = []; 
     
     distractor = topsCallList();
@@ -327,7 +332,7 @@ end
 %% Accessory Functions
 function gazelog(list)
     %Reading gaze
-    [lefteye, righteye, timestamp, trigSignal] = tetio_readGazeData;
+    [lefteye, righteye, timestamp, ~] = tetio_readGazeData;
 
     %Storing/Organizing data
     if ~isempty(lefteye) || ~isempty(righteye)
@@ -364,10 +369,11 @@ function playstim(list)
     wavfiles = list{'Stimulus'}{'Wavfiles'};
     version = randi(50); %randomly choose one of 50 sound versions
     waveform = wavfiles(:,:, version, state);
+    waveform = waveform(:,1:ceil((3/4)*length(waveform)));
     
     %Play sound
     player = list{'Stimulus'}{'Player'};
-    player.waveform = [waveform waveform waveform waveform waveform waveform];
+    player.waveform = [waveform waveform]; %waveform waveform waveform waveform waveform];
     player.play;
     
     %Get timestamp
@@ -392,7 +398,8 @@ function waitForChoiceKey(list)
     counter = list{'Counter'}{'Trial'};
     ui = list{'Input'}{'Controller'};
     player = list{'Stimulus'}{'Player'};
-    playsecs = length(player.waveform)/player.sampleFrequency;
+    responsewindow = list{'Input'}{'ResponseWindow'};
+    playsecs = (length(player.waveform)/player.sampleFrequency)*6;
     
     ui.flushData
     
@@ -402,8 +409,8 @@ function waitForChoiceKey(list)
     %Waiting for keypress
     tic 
     while ~strcmp(press, 'left') && ~strcmp(press, 'right')
-        %Break loop is complete sound has played and move to next trial
-        if toc > playsecs
+        %Break loop if responsewindow expires and move to next trial
+        if toc > responsewindow %This was previously Playsecs
             choice = NaN;
             timestamp = NaN;
             break
@@ -412,7 +419,7 @@ function waitForChoiceKey(list)
         %Check for button press
         press = '';
         read(ui);
-        [a, b, eventname, d] = ui.getHappeningEvent();
+        [~, ~, eventname, ~] = ui.getHappeningEvent();
         if ~isempty(eventname) && length(eventname) == 1
             press = eventname;
         end
@@ -450,9 +457,10 @@ function waitForChoiceKeyPattern(list)
     pattern = list{'Effort'}{'Pattern'};
     pwindow = list{'Effort'}{'PatternWindow'};
     player = list{'Stimulus'}{'Player'};
-    playsecs = length(player.waveform)/player.sampleFrequency;
+    playsecs = (length(player.waveform)/player.sampleFrequency)*6;
+    responsewindow = list{'Input'}{'ResponseWindow'};
     
-    [depth, width] = size(pattern);
+    [~, width] = size(pattern);
     
     ui.flushData
     
@@ -464,8 +472,8 @@ function waitForChoiceKeyPattern(list)
     tic 
     while isPattern == 0 || isUnderTime == 0
                 
-        %Break loop if complete sound has played and move to next trial
-        if toc > playsecs
+        %Break loop if responsewindow expires and move to next trial
+        if toc > responsewindow
             choice = NaN; 
             timestamp = NaN;
             break
@@ -563,8 +571,8 @@ function output = checkFixation(list)
         end
 
         %Seeing if there's fixation (X Y values between 0.45 and 0.55
-        fixX = eyeX > 0.40 & eyeX < 0.60;
-        fixY = eyeY > 0.40 & eyeY < 0.60;
+        fixX = eyeX > 0.30 & eyeX < 0.70;
+        fixY = eyeY > 0.30 & eyeY < 0.70;
 
         if all(fixY) && all(fixX)
             output = 'Stimulus'; %Send output to get State Machine to produce stimulus
@@ -606,22 +614,22 @@ end
 function distractfunc(list)
     %Import player
     player = list{'Distractor'}{'Player'};
+    playprobability = list{'Distractor'}{'Probability'};
     
     %Give player characteristics
     maxwait = 7; %maximum possible wait time before a new sound plays
-    player.frequency = rand*1000;
+    player.frequency = normrnd(400, 150);
     
     %randomly assign whether or not noise will play
-    playprobability = 0.2;
     willplay = rand;
     willplay = rand <= playprobability;
     
-    player.intensity = rand*willplay;
+    player.intensity = 1*willplay;
     
-    player.prepareToPlay
+    player.prepareToPlay;
     
     %Play sound
-    player.play
+    player.play;
     
     %Store time
     list{'Distractor'}{'Playtimes'} = [list{'Distractor'}{'Playtimes'}, player.lastPlayTime];

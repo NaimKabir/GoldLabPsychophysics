@@ -1,11 +1,12 @@
 %% AudRT Task Run
+clear classes; close all;
 
 %Create task/list
-[task, list] = AudRTTaskT(0, 0);
+[task, list] = AudRTTaskT(1, 1);
 
 %Open window and run
 dotsTheScreen.openWindow();
-task.run;
+task.run;b 
 dotsTheScreen.closeWindow();
 
 %% Post processing

@@ -102,7 +102,6 @@ list = topsGroupedList();
     list{'Timestamps'}{'Response'} = zeros(1, Calib.points.n);
     list{'Timestamps'}{'ReactionTime'} = ones(1, Calib.points.n)*-10;
     list{'Timestamps'}{'TrialStart'} = zeros(1, Calib.points.n);
-    list{'Timestamps'}{'Pulses'} = [];
     
 % EYE TRACKER                   
     list{'Eye'}{'Left'} = [];
