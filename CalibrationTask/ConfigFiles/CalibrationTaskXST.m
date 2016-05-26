@@ -99,7 +99,6 @@ list = topsGroupedList();
 %TIMESTAMPS
     list{'Timestamps'}{'Drawing'} = zeros(1, Calib.points.n);
     list{'Timestamps'}{'Change'} = zeros(1, Calib.points.n);
-    list{'Timestamps'}{'Response'} = zeros(1, Calib.points.n);
     list{'Timestamps'}{'ReactionTime'} = ones(1, Calib.points.n)*-10;
     list{'Timestamps'}{'TrialStart'} = zeros(1, Calib.points.n);
     
@@ -267,7 +266,7 @@ list{'Runnables'}{'Machine'} = Machine;
 
 %Concurrent Composite
 contask = topsConcurrentComposite();
-contask.addChild(Machine);
+contask.addChild(Machine); %This makes sure 
 contask.addChild(readui);
 contask.addChild(readgaze);
 %contask.addChild(synch);

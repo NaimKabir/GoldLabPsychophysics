@@ -33,7 +33,7 @@ classdef dotsPlayableNote < dotsPlayable
             dt = 1/self.sampleFrequency; %gives time duration of one element of our array
             array = (1:N)*dt; %translate elementwise array into a time stamp array
             
-            %Setting 'pluck' amplitude envelope
+            %Setting 'pluck' amplitude envelope if no presepecified ampenv
             if isempty(self.ampenv)
                 ampenv = exp(-array/(self.duration/10))-exp(-array/(self.duration/20));
                 ampenv = ampenv/max(ampenv); %Normalize

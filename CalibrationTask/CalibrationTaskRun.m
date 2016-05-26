@@ -29,7 +29,6 @@ Data.SynchTimes = list{'Synch'}{'Times'}; %If the eeglog file is ever mistakenly
 %Assorted Timestamps
 Data.DrawTimestamps = list{'Timestamps'}{'Drawing'};
 Data.ChangeTimestamps = list{'Timestamps'}{'Change'};
-Data.ResponseTimestamps = list{'Timestamps'}{'Response'};
 Data.ReactionTimes = list{'Timestamps'}{'ReactionTime'};
 Data.TrialStartTimes = list{'Timestamps'}{'TrialStart'};
 
