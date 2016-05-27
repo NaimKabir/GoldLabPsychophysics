@@ -1,14 +1,14 @@
 # Dream Oddball Task
 
-Overview: A certain sound frequency will be played commonly. A second, ‘oddball’ frequency will be played rarely. The participant is required to press a button or pattern of buttons to respond to oddball frequencies when they play.
+**Overview:** A certain sound frequency will be played commonly. A second, ‘oddball’ frequency will be played rarely. The participant is required to press a button or pattern of buttons to respond to oddball frequencies when they play.
 
 There are additional modes that can be run as well:
 
-Distractor Mode: This turns on a distractor sound that will intermittently play and make the task a little more difficult.
+**Distractor Mode:** This turns on a distractor sound that will intermittently play and make the task a little more difficult.
 
-Adaptive Mode: This will tune the difference between the oddball frequency and commonly-played frequency to adapt the difficulty of the task to the participant’s ability.
+**Adaptive Mode:** This will tune the difference between the oddball frequency and commonly-played frequency to adapt the difficulty of the task to the participant’s ability.
 
-Opposite Input Mode: During the standard version of the task, the participant must respond to oddball frequencies being played. With Opposite Input Mode turned on, they must respond to standard frequencies, and IGNORE oddball frequencies.
+**Opposite Input Mode:** During the standard version of the task, the participant must respond to oddball frequencies being played. With Opposite Input Mode turned on, they must respond to standard frequencies, and IGNORE oddball frequencies.
 
 ***
 # Dependencies
