@@ -56,9 +56,11 @@ For example, to access Eyetracker data for the left eye, I can:
 Some important data stores:
 
 list{‘Stimulus’}{‘Playtimes’} = Timestamps for every sound played
+
 list{‘Stimulus’}{‘Playfreqs’} = Frequencies played for each trial
 
 list{‘Input’}{‘Choices’} = Participant inputs for a trial
+
 list{‘Input’}{‘Corrects’} = Whether or not answers were correct for each trial
 
 list{‘Eye’}{‘Left’} = All eye tracking data (X-coordinate, Y-coordinate, Eye Diameter, Validity Code) for the left eye
