@@ -26,7 +26,7 @@ end
 
 list{'Input'}{'OppositeOn'} = opposite_input_on;
 
-trials = 100;
+trials = 40; %trial number
 interval = 3; %intertrial interval
 standardf = 500; %standard frequency
 oddf = 700; %oddball frequency
@@ -40,23 +40,34 @@ list{'Stimulus'}{'ProbabilityOdd'} = p_odd;
 subj_id = input('Subject ID: ','s');
 
 %Sound player
-player = dotsPlayableNote();
-player.duration = 0.5; %sound duration in seconds
-player.intensity = 0.7;
-player.ampenv = tukeywin(player.sampleFrequeny*player.duration);
+    player = dotsPlayableNote();
+    player.duration = 0.5; %sound duration in seconds
+    player.intensity = 0.7;
+    player.ampenv = tukeywin(player.sampleFrequency*player.duration)';
+
+    list{'Stimulus'}{'Player'} = player;
 
 %INPUT PARAMETERS
     reactionwindow = 1; %Intertrial interval MUST be larger than this number for task to be robust
-    responsepattern = [4, 4, 4, 4, 4]; %Pattern is right trigger-pull 5 times
+    responsepattern = [4]; %Pattern is right trigger-pull 5 times
 
     list{'Input'}{'ReactionWindow'} = reactionwindow;
-    list{'Input'}{'ResponsePattern'} = responsepattern;
-
+    list{'Input'}{'ResponsePattern'} = responsepattern; 
+    
+% EYE TRACKER
+    list{'Eye'}{'Left'} = [];
+    list{'Eye'}{'Right'} = [];
+    list{'Eye'}{'Time'} = [];
+    list{'Eye'}{'RawTime'} = [];
+    list{'Eye'}{'SynchState'} = [];
+    
+    list{'Eye'}{'Fixtime'} = interval*60; %fixation time in terms of sample number
+    
 % DISTRACTOR
 % adds distraction tones throughout task
     distractplayer = dotsPlayableNote();
     distractplayer.duration = 0.5;
-    distractplayer.noise = 0.35;
+    distractplayer.noise = 0;
     distractprobability = 0.15;
     list{'Distractor'}{'Player'} = distractplayer;
     list{'Distractor'}{'Probability'} = distractprobability;
@@ -88,7 +99,7 @@ list{'Stimulus'}{'Playtimes'} = zeros(1,trials); %Store sound player timestamps
 list{'Stimulus'}{'Playfreqs'} = zeros(1,trials); %Store frequencies played
 
 list{'Input'}{'Choices'} = zeros(1,trials); %Storing if subject pressed the buttons required
-list{'Input'}{'Corrects'} = ones(1,trials)*33; %Storing correctness of answers. Initialized to 33 so we know if there was no input during a trial with 33.
+list{'Input'}{'Corrects'} = ones(1,trials)*-1; %Storing correctness of answers. Initialized to 33 so we know if there was no input during a trial with 33.
 list{'Timestamps'}{'Response'} = zeros(1,trials); %Storing subject response timestamp
 %% Input
 gp = dotsReadableHIDGamepad(); %Set up gamepad object
@@ -244,19 +255,19 @@ readgaze.addCall({@gazelog, list}, 'Read gaze');
 %% Runnables
 
 if adaptive_on == 1
-    checkfunc = @(c) checkquest(x);
+    checkfunc = @(x) checkquest(x);
     stimulusfunc = @(x) queststim(x); 
 else
-    checkfunc = @(c) checkinput(x); %Can also be checkquest(x) if adaptive difficulty = 1
+    checkfunc = @(x) checkinput(x); %Can also be checkquest(x) if adaptive difficulty = 1
     stimulusfunc = @(x) playstim(x); %Can also be queststim(x) if adaptive difficulty = 1
 end
 
 %STATE MACHINE
 Machine = topsStateMachine();
 stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                 'CheckReady', {checkfunc list}, {@checkFixation list}, {}, 0, 'CheckReady';
-                 'Stimulus', {stimulusfunc list}, {}, {}, 0, 'Exit';
-                 'Exit', {}, {}, {}, interval, ''};
+                 'CheckReady', {}, {@checkFixation list}, {}, 0, 'CheckReady';
+                 'Stimulus', {stimulusfunc list}, {}, {}, interval, 'Exit';
+                 'Exit', {checkfunc list}, {}, {}, 0, ''};
              
 Machine.addMultipleStates(stimList);
 
@@ -287,7 +298,7 @@ function checkquest(list)
     %Important objects pertinent to quest updating
     q = list{'Quest'}{'Object'};
     opposite_input_on = list{'Input'}{'OppositeOn'};
-    freqlist = list{'Stimulus'}{'Freqlist'};
+    freqlist = list{'Stimulus'}{'Playfreqs'};
     oddf = list{'Stimulus'}{'OddFreq'};
     standardf = list{'Stimulus'}{'StandardFreq'};
     
@@ -296,15 +307,17 @@ function checkquest(list)
     stoptime = playtime + reactionwindow;
     
     %Get all ui.history rows between these times(inclusive)
-    history = ui.history(ui.history(:,3) >= playtime && ui.history(:,3) <= stoptime, :);
+    history = ui.history(ui.history(:,3) >= playtime & ui.history(:,3) <= stoptime, :);
     
     %get only rows where there are presses
     history = history(history(:,2) > 1, :);
     
     %patternmatch in for loop
     width = length(pattern); %width of pattern expected, in samples
+    isPattern = 0;
        
     %Check if the second column contains a matching pattern
+    responsetime = -1; %Initialize responsetime as nonsense for nonresponse trials
     loc_vals = history(:,2);
     for i = 1:length(loc_vals)-(width-1)
             loc_idx = i : i+(width-1);
@@ -324,6 +337,7 @@ function checkquest(list)
         checkfreq = oddf;
     end
     
+    
     if isPattern && freqlist(counter) == checkfreq %If they pressed button, was it a good press?
         correct = 1;
     elseif ~isPattern && freqlist(counter) ~= checkfreq %Did they avoid pressing for the right reasons?
@@ -339,6 +353,7 @@ function checkquest(list)
     
         %Update QUEST object with latest response (the 'correct' variable)
         q = QuestUpdate(q, diff, correct);
+        list{'Quest'}{'Object'} = q;
     
     %Storing user input and timestamps
     choices = list{'Input'}{'Choices'};
@@ -364,7 +379,7 @@ function checkinput(list)
     
     %To check correct
     opposite_input_on = list{'Input'}{'OppositeOn'};
-    freqlist = list{'Stimulus'}{'Freqlist'};
+    freqlist = list{'Stimulus'}{'Playfreqs'};
     oddf = list{'Stimulus'}{'OddFreq'};
     standardf = list{'Stimulus'}{'StandardFreq'};
     
@@ -373,15 +388,17 @@ function checkinput(list)
     stoptime = playtime + reactionwindow;
     
     %Get all ui.history rows between these times(inclusive)
-    history = ui.history(ui.history(:,3) >= playtime && ui.history(:,3) <= stoptime, :);
+    history = ui.history(ui.history(:,3) >= playtime & ui.history(:,3) <= stoptime, :);
     
     %get only rows where there are presses
     history = history(history(:,2) > 1, :);
     
     %patternmatch in for loop
     width = length(pattern); %width of pattern expected, in samples
+    isPattern = 0;
        
     %Check if the second column contains a matching pattern
+    responsetime = -1; %Initialize responsetime as nonsense for nonresponse trials
     loc_vals = history(:,2);
     for i = 1:length(loc_vals)-(width-1)
             loc_idx = i : i+(width-1);
@@ -430,11 +447,15 @@ function queststim(list)
     list{'Stimulus'}{'Counter'} = counter; 
 
     %Import important objects
+    player = list{'Stimulus'}{'Player'};
     standardf = list{'Stimulus'}{'StandardFreq'};
-    freqdiff = abs(QuestQuantile(q));
-    oddf = standardf + freqdiff;
     p_odd = list{'Stimulus'}{'ProbabilityOdd'};
     q = list{'Quest'}{'Object'};
+    
+    %Formulate new oddf
+    freqdiff = abs(QuestQuantile(q));
+    oddf = standardf + freqdiff;
+    list{'Stimulus'}{'OddFreq'} = oddf;
     
     %Dice roll to decide if odd or standard
     roll = rand;
@@ -464,6 +485,7 @@ function playstim(list)
     list{'Stimulus'}{'Counter'} = counter; 
     
     %importing important list objects
+    player = list{'Stimulus'}{'Player'};
     standardf = list{'Stimulus'}{'StandardFreq'};
     oddf = list{'Stimulus'}{'OddFreq'};
     p_odd = list{'Stimulus'}{'ProbabilityOdd'};
@@ -549,8 +571,10 @@ function distractfunc(list)
     %Import player
     player = list{'Distractor'}{'Player'};
     playprobability = list{'Distractor'}{'Probability'};
+    oddf = list{'Stimulus'}{'OddFreq'};
     
     %Give player characteristics
+    player.frequency = oddf;
     
     %randomly assign whether or not noise will play
     willplay = rand;
