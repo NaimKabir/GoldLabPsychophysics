@@ -21,7 +21,7 @@ classdef dotsReadableEyeEyelink < dotsReadableEye
         isEyelinkTime = true;
         
         % function that returns the current time as a number
-        clockFunction = mglGetSecs();
+        %clockFunction = mglGetSecs();
     end
     
     methods

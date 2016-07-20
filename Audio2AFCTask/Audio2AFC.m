@@ -1,11 +1,9 @@
 function [task, list] = Audio2AFC(trials)
 
 %% Housekeeping
-load 'IRC_CUSTOM_R_HRIR.mat';
-
 %Setting up the screen
 sc=dotsTheScreen.theObject;
-sc.reset('displayIndex', 0); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
+sc.reset('displayIndex', 2); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
 sc.reset('backgroundColor', [110 178 233]);
 
 %Call GetSecs just to load up the Mex files for getting time, so no delays
@@ -15,15 +13,21 @@ GetSecs;
 %% List Items
 list = topsGroupedList();
 
+if nargin < 1
+    trials = 100;
+end
+
 %Setting important values
 metahazard = 0.01;
 hazards = [0.3, 0.05];
 Adists = [1 0; 0 1];
 Bdists = [0.8 0.2; 0.2 0.8];
+fixtime = 3; %Minimum interstimulus interval (in seconds)
+list{'Eye'}{'Fixtime'} = fixtime;
 
 %Creating our audio player
 player = dotsPlayableNote();
-player.intensity = 0.01; %Player is loud. Set to small intensity (0.01)
+player.intensity = 0.5; %Player is loud. Set to small intensity (0.01)
 player.frequency = 196.00;
 player.duration = 0.3;
 
@@ -32,9 +36,6 @@ player.duration = 0.3;
 
 % STIMULUS
     list{'Stimulus'}{'Player'} = player;
-    
-    %Store HRIR data from our pre-loaded .mat file
-    list{'Stimulus'}{'Filters'} = {l_custom_S, r_custom_S};    
 
     list{'Stimulus'}{'Counter'} = 0;
     list{'Stimulus'}{'Trials'} = trials;
@@ -48,11 +49,6 @@ player.duration = 0.3;
     list{'Stimulus'}{'Dists'} = {Adists, Bdists};
     list{'Stimulus'}{'Distlist'} = zeros(1, trials);
     list{'Stimulus'}{'Distspace'} = [1 2]; %Choose bottom/distribution 
-
-    %Generating sounds
-    soundmatrix = tonegen(list);
-    soundmatrix(:,:,2) = [];
-    list{'Stimulus'}{'Waves'} = soundmatrix; %last argument as 1 is left, 2 is center, 3 is right
     
 % TIMESTAMPS
     list{'Timestamps'}{'Stimulus'} = zeros(1,trials); 
@@ -67,8 +63,10 @@ player.duration = 0.3;
     list{'Eye'}{'Time'} = [];
     list{'Eye'}{'RawTime'} = [];
     list{'Eye'}{'SynchState'} = [];
+
 %% Input
 gp = dotsReadableHIDGamepad(); %Set up gamepad object
+gp.deviceInfo
 if gp.isAvailable
     % use the gamepad if connected
     ui = gp;
@@ -76,15 +74,15 @@ if gp.isAvailable
     % define movements, which must be held down
     %   map x-axis -1 to left and +1 to right
     isLeft =  [gp.components.ID] == 7;
-    isUp = [gp.components.ID] == 4;
+    isA = [gp.components.ID] == 3;
     isRight = [gp.components.ID] == 8;
     
     Left = gp.components(isLeft);
-    Up = gp.components(isUp);
+    A = gp.components(isA);
     Right = gp.components(isRight);
     
     gp.setComponentCalibration(Left.ID, [], [], [0 +2]);
-    gp.setComponentCalibration(Up.ID, [], [], [0 +3]);
+    gp.setComponentCalibration(A.ID, [], [], [0 +3]);
     gp.setComponentCalibration(Right.ID, [], [], [0 +4]);
     
     % undefine any default events
@@ -95,7 +93,7 @@ if gp.isAvailable
     
     %Define values for button presses
     gp.defineEvent(Left.ID, 'left', 0, 0, true);
-    gp.defineEvent(Up.ID, 'up', 0, 0, true);
+    gp.defineEvent(A.ID, 'continue', 0, 0, true);
     gp.defineEvent(Right.ID, 'right', 0, 0, true);
 
 else
@@ -105,15 +103,15 @@ else
     % define movements, which must be held down
     %   Left = +2, Up = +3, Right = +4
     isLeft = strcmp({kb.components.name}, 'KeyboardF');
-    isUp = strcmp({kb.components.name}, 'KeyboardW');
+    isSpace = strcmp({kb.components.name}, 'KeyboardSpacebar');
     isRight = strcmp({kb.components.name}, 'KeyboardJ');
 
     LeftKey = kb.components(isLeft);
-    UpKey = kb.components(isUp);
+    SpaceKey = kb.components(isSpace);
     RightKey = kb.components(isRight);
     
     kb.setComponentCalibration(LeftKey.ID, [], [], [0 +2]);
-    kb.setComponentCalibration(UpKey.ID, [], [], [0 +3]);
+    kb.setComponentCalibration(SpaceKey.ID, [], [], [0 +3]);
     kb.setComponentCalibration(RightKey.ID, [], [], [0 +4]);
     
     % undefine any default events
@@ -125,7 +123,7 @@ else
     % define events, which fire once even if held down
     % pressing w a d keys is a 'choice' event
     kb.defineEvent(LeftKey.ID, 'left',  0, 0, true);
-    kb.defineEvent(UpKey.ID, 'up',  0, 0, true);
+    kb.defineEvent(SpaceKey.ID, 'continue',  0, 0, true);
     kb.defineEvent(RightKey.ID, 'right',  0, 0, true);
     
 ui = kb;
@@ -201,7 +199,7 @@ readgaze.addCall({@gazelog, list}, 'Read gaze');
     % Prepare machine, for use in antetask
     prepareMachine = topsStateMachine();
     prepList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                'Ready', {@startsave list},      {@waitForPrepKey list},      {},     0,       'Ready';
+                'Ready', {@startsave list},      {},      {@waitForCheckKey list},     0,       'Hide';
                 'Hide', {hide [ready button]}, {}, {}, 0, 'Show';
                 'Show', {show [perm dot]}, {}, {}, 0, 'Finish'
                 'Finish', {}, {}, {}, 0, '';};
@@ -210,9 +208,10 @@ readgaze.addCall({@gazelog, list}, 'Read gaze');
     % State Machine, for use in maintask
     Machine = topsStateMachine();
     stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                 'Stimulus', {@playnote list}, {}, {}, 0.1, 'Rest';
-                 'Rest', {}, {@waitForChoiceKey list}, {}, 0, 'Exit'
-                 'Exit', {}, {}, {}, 0.5, ''};
+                 'CheckReady', {}, {@checkFixation list}, {}, 0, 'CheckReady'
+                 'Stimulus', {@playnote list}, {}, {}, 0, 'Rest';
+                 'Rest', {@waitForChoiceKey list}, {}, {}, 0, 'Exit';
+                 'Exit', {}, {}, {}, fixtime, ''};
     Machine.addMultipleStates(stimList);
              
     % Concurrent Composites
@@ -222,7 +221,7 @@ readgaze.addCall({@gazelog, list}, 'Read gaze');
     
     contask = topsConcurrentComposite();
     contask.addChild(ensemble);
-    %contask.addChild(readgaze);
+    contask.addChild(readgaze);
     contask.addChild(readui);
     contask.addChild(Machine);
     
@@ -309,14 +308,17 @@ function playnote(list)
     dir(roll <= p(1)) = 1;
     dir(roll > p(1)) = 2;
     
-    wave = list{'Stimulus'}{'Waves'};
-    wave = wave(:,:, dir);
-    
     %updating dirlist
     dirlist(counter) = dir;
     
     %Play sound
-    player.waveform = wave;
+    player.prepareToPlay;
+    if dir == 1
+        player.waveform = [player.waveform(1,:); zeros(1, length(player.waveform))];
+    elseif dir == 2
+        player.waveform = [zeros(1, length(player.waveform)); player.waveform(1,:)];
+    end
+    
     player.play;
     playtimes(counter) = player.lastPlayTime; %Log audio onset time
     
@@ -327,50 +329,6 @@ function playnote(list)
     list{'Timestamps'}{'Stimulus'} = playtimes;
 end
     
-
-function soundmatrix = tonegen(list)
-    %set sampling frequency and duration of our tone
-    Fs = 44100;
-    duration = 0.3;
-    
-    dt = 1/Fs; %gives time duration of one element of our array
-    N = ceil(duration*Fs); % get elementwise length of our tone
-    array = (1:N)*dt; %translate elementwise array into a time stamp array
-
-    %Setting 'pluck' amplitude envelope
-    ampenv = exp(-array/(.1*duration))-exp(-array/(.05*duration));
-    ampenv = ampenv/max(ampenv); %Normalize
-    
-    %loading HRIR data
-    HRIR = list{'Stimulus'}{'Filters'};
-    l_hrir_S = HRIR{1};
-    r_hrir_S = HRIR{2};
-
-    %set frequencies
-    frequency = [196.00 196.00 196.00];
-    
-    %Find cutoff point to cut off sound signal, in case it trails off or something
-    fraction = 0.75;
-    cutoff = ceil(length(array)*fraction);
-    
-    %Initializing matrix to store sounds
-    soundmatrix = zeros(2,cutoff,3);
-
-    %creating sounds and filtering
-    for i = 1:3
-        note = sin(2*pi*frequency(i)*array(1:cutoff)).*ampenv(1:cutoff); %creating sound with specific frequency
-        
-        %filtering
-        index = find(l_hrir_S.elev_v==0 & l_hrir_S.azim_v == 90*i, 1);
-        cLeft = conv(note, l_hrir_S.content_m(index,:)');
-        cRight = conv(note, r_hrir_S.content_m(index,:)');
-        stored = [cLeft; cRight];
-        stored = stored/max(abs(stored(:)));
-    
-        soundmatrix(:,:,i) = stored(:,1:cutoff);
-    end
-end
-
 function gazelog(list)
     %Reading gaze
     [lefteye, righteye, timestamp, trigSignal] = tetio_readGazeData;
@@ -396,25 +354,58 @@ function gazelog(list)
     end
 end
 
-function output = waitForPrepKey(list)
-
-    output = 'Ready';
-
-    % Getting user input
+function waitForCheckKey(list)
+    % Getting list items
     ui = list{'Input'}{'Controller'};
-    ui.flushData
+    ui.flushData;
+    
+    %Initializing variable
     press = '';
   
     %Waiting for keypress
-    read(ui);
-    [a, b, eventname, d] = ui.getHappeningEvent();
-    if ~isempty(eventname)
-        press = eventname;
+    while ~strcmp(press, 'continue')
+        press = '';
+        read(ui);
+        [a, b, eventname, d] = ui.getHappeningEvent();
+        if ~isempty(eventname) && length(eventname) == 1
+            press = eventname;
+        end
     end
-   
-    if strcmp(press, 'left') || strcmp(press, 'right') 
-        output = 'Hide';
+end
+
+function waitForChoiceKey(list)
+    % Getting list items
+    choices = list{'Input'}{'Choices'};
+    counter = list{'Stimulus'}{'Counter'};
+    ui = list{'Input'}{'Controller'};
+    
+    ui.flushData
+    
+    %Initializing variable
+    press = '';
+    
+    disp('Waiting...')
+    %Waiting for keypress
+    while ~strcmp(press, 'left') && ~strcmp(press, 'right')
+        press = '';
+        read(ui);
+        [a, b, eventname, d] = ui.getHappeningEvent();
+        if ~isempty(eventname) && length(eventname) == 1
+            press = eventname;
+        end
     end
+    
+    disp('Pressed')
+    
+    if strcmp(press, 'left')
+        choice = 1;
+    else
+        choice = 2;
+    end
+    
+    %Updating choices list
+    choices(counter+1) = choice; %counter + 1, because this is a prediction task
+    list{'Input'}{'Choices'} = choices;
     
     %Getting choice timestamp
     timestamp = ui.history;
@@ -424,43 +415,37 @@ function output = waitForPrepKey(list)
     timestamps = list{'Timestamps'}{'Choices'};
     timestamps(counter) = timestamp;
     list{'Timestamps'}{'Choices'} = timestamps;
-            
 end
 
-function output = waitForChoiceKey(list)
+function output = checkFixation(list)
+    %Initialize output
+    output = 'CheckReady'; %This causes a State Machine loop until fixation is achieved
 
-    output = 'Rest';
+    %Get parameters for holding fixation
+    fixtime = list{'Eye'}{'Fixtime'}*60; %Converting from seconds to samples
 
-    % Getting list items
-    choices = list{'Input'}{'Choices'};
-    counter = list{'Stimulus'}{'Counter'};
-    ui = list{'Input'}{'Controller'};
-    ui.flushData
-    
-    %Initializing some variables
-    press = '';
-  
-    %Waiting for keypress
-    read(ui);
-    [a, b, eventname, d] = ui.getHappeningEvent();
-    list{'Input'}{'Eventname'} = eventname;
-    if ~isempty(eventname) && length(eventname) == 1
-        press = eventname
+    %Get eye data for left eye
+    eyedata = list{'Eye'}{'Left'};
+    if ~isempty(eyedata) && length(eyedata) > fixtime + 1
+        eyedata = eyedata(end-fixtime:end, :); %Cutting data to only the last 'fixtime' time window
+        eyeX = eyedata(:,1);
+        eyeY = eyedata(:,2);
+
+        %cleaning up signal to let us tolerate blinks
+        if any(eyeX > 0) && any(eyeY > 0)
+            eyeX(eyeX < 0) = [];
+            eyeY(eyeY < 0) = [];
+        end
+
+        %Seeing if there's fixation (X Y values between 0.40 and 0.60
+        fixX = eyeX > 0.40 & eyeX < 0.60;
+        fixY = eyeY > 0.40 & eyeY < 0.60;
+
+        if all(fixY) && all(fixX)
+            output = 'Stimulus'; %Send output to get State Machine to produce stimulus
+        end
     end
-   
-    if strcmp(press, 'left') || strcmp(press, 'right') 
-        output = 'Exit';
-    end
-       
-    if strcmp(press, 'left')
-        choice = 1;
-    else
-        choice = 2;
-    end
-    
-    %Updating choices list
-    choices(counter+1) = choice;
-    list{'Input'}{'Choices'} = choices;
+
 end
 
 function startsave(list)
@@ -472,7 +457,7 @@ function startsave(list)
     %a number
     appendno = 1;
     while exist(savename)
-        savename = [ID num2str(appendno) '_Audio2AFC_list.mat'];
+        savename = [ID num2str(appendno) '_Audio2AFC.mat'];
         appendno = appendno + 1;
     end
     

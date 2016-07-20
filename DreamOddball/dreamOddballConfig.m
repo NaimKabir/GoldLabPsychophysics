@@ -25,8 +25,9 @@ elseif nargin < 3
 end
 
 list{'Input'}{'OppositeOn'} = opposite_input_on;
+list{'Distractor'}{'On'} = distractor_on;
 
-trials = 40; %trial number
+trials = 300; %trial number
 interval = 3; %intertrial interval
 standardf = 500; %standard frequency
 oddf = 700; %oddball frequency
@@ -49,10 +50,28 @@ subj_id = input('Subject ID: ','s');
 
 %INPUT PARAMETERS
     reactionwindow = 1; %Intertrial interval MUST be larger than this number for task to be robust
-    responsepattern = [4]; %Pattern is right trigger-pull 5 times
+    responsepattern = [4 4 4]; %Pattern is right trigger-pull 3 times
 
     list{'Input'}{'ReactionWindow'} = reactionwindow;
     list{'Input'}{'ResponsePattern'} = responsepattern; 
+    
+    %Calculating 'effort' to respond
+    Rvec = responsepattern;
+    Rvec(Rvec == 2) = 1;
+    Rvec(Rvec == 4) = 2; %Changing 4s and 2s to 1s and 2s for easy tabulation
+
+    mix = tabulate(Rvec); %Getting how many lefts vs. rights
+    total = sum(mix(:,2)); %Total buttons required to be pressed
+    lefts = mix(1,2); %Lefts required to press
+    
+    %Calculating number of left/right sequences possible to generate with
+    %this proportion of left/rights
+    listperms = factorial(total)/(factorial(total - lefts)*factorial(lefts));
+
+    %Getting effort as a combo of sequence length/complexity
+    effort = (log2(listperms)+ 1)*total;
+    
+    list{'Input'}{'Effort'} = effort;
     
 % EYE TRACKER
     list{'Eye'}{'Left'} = [];
@@ -400,6 +419,7 @@ function checkinput(list)
     %Check if the second column contains a matching pattern
     responsetime = -1; %Initialize responsetime as nonsense for nonresponse trials
     loc_vals = history(:,2);
+    
     for i = 1:length(loc_vals)-(width-1)
             loc_idx = i : i+(width-1);
             grouping = loc_vals(loc_idx)';
@@ -541,11 +561,11 @@ function output = checkFixation(list)
     output = 'CheckReady'; %This causes a State Machine loop until fixation is achieved
 
     %Get parameters for holding fixation
-    fixtime = list{'Eye'}{'Fixtime'};
+    fixtime = list{'Eye'}{'Fixtime'}*60; %converting from seconds to samples
 
     %Get eye data for left eye
     eyedata = list{'Eye'}{'Left'};
-    if ~isempty(eyedata)
+    if ~isempty(eyedata) && length(eyedata) > fixtime + 1
         eyedata = eyedata(end-fixtime:end, :); %Cutting data to only the last 'fixtime' time window
         eyeX = eyedata(:,1);
         eyeY = eyedata(:,2);
