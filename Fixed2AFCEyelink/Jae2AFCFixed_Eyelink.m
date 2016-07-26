@@ -403,7 +403,6 @@ function checkFixation(list)
         
         if ~isempty(start_idx)
             lengthreq = length(start_idx:length(eyestruct));
-            start_idx
         else
             lengthreq = Inf;
         end

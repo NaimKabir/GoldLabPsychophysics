@@ -93,7 +93,7 @@ subj_id = subID;
     list{'Eyelink'}{'YBounds'} = ybounds;
     
     %List items used for recording
-    list{'Eyelink'}{'Playtimes'} = zeros(1,length(stimvc));
+    list{'Eyelink'}{'Playtimes'} = zeros(1,trials);
     
     
 % DISTRACTOR
@@ -397,7 +397,10 @@ function checkquest(list)
     
     responsetimes = list{'Timestamps'}{'Response'};
     responsetimes(counter)= responsetime;
-    list{'Timestamps'}{'Response'} = responsetimes;  
+    list{'Timestamps'}{'Response'} = responsetimes;
+    
+    %Debug Display
+    fprintf('Trial %d complete. \n', counter);
 end
 
 function checkinput(list)
@@ -469,7 +472,10 @@ function checkinput(list)
     
     responsetimes = list{'Timestamps'}{'Response'};
     responsetimes(counter)= responsetime;
-    list{'Timestamps'}{'Response'} = responsetimes;  
+    list{'Timestamps'}{'Response'} = responsetimes;
+    
+    %Debug Display
+    fprintf('Trial %d complete. \n', counter);
 end
 
 function queststim(list)
@@ -584,7 +590,6 @@ function checkFixation(list)
         
         if ~isempty(start_idx)
             lengthreq = length(start_idx:length(eyestruct));
-            start_idx
         else
             lengthreq = Inf;
         end
