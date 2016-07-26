@@ -28,7 +28,7 @@ list{'Input'}{'OppositeOn'} = opposite_input_on;
 list{'Distractor'}{'On'} = distractor_on;
 
 trials = 300; %trial number
-interval = 3; %intertrial interval
+interval = 2; %intertrial interval
 standardf = 500; %standard frequency
 oddf = 700; %oddball frequency
 p_odd = 0.25; %probability of oddball freq
@@ -98,7 +98,7 @@ subj_id = input('Subject ID: ','s');
 %QUEST OBJECT
     % Creating Quest structure
     tGuess = 200; %Guess at the appropriate difference between frequencies
-    tGuessSd = 100; %Standard deviation in guesses permitted
+    tGuessSd = 50; %Standard deviation in guesses permitted
     
     pThreshold = 0.70; %How successful do you want a subject to be?
     
@@ -107,7 +107,9 @@ subj_id = input('Subject ID: ','s');
     delta = 0.01;
     gamma = 0.5;
 
-    q = QuestCreate(tGuess, tGuessSd, pThreshold, beta, delta, gamma);
+    q = QuestCreate(tGuess, tGuessSd, pThreshold, beta, delta, gamma, [0.5], 10000); %Quest object created
+    %NOTE: The 'range' value (last argument) was set arbitrarily. It may
+    %not be enough if the trial number is higher than 300. 
     
     list{'Quest'}{'Object'} = q;
     

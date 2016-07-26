@@ -20,7 +20,7 @@ function cleaned_data = pupilclean(ldil, z)
     
     %Logically indexing places where the Tobii eyetracker tells you there
     %is bad data (anywhere there's a -1)
-    negs = ldil == -1; %find where validity code is bad
+    negs = ldil < 0; %find where validity code is bad
 
     %Find places where the derivative of the dilation is suspiciously large
     deriv = [0; abs(diff(ldil))];
