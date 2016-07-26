@@ -1,9 +1,9 @@
 %% DreamTask: Oddball Version
-function [maintask, list] = dreamOddballConfig(distractor_on, adaptive_on, opposite_input_on)
+function [maintask, list] = dreamOddballConfig(distractor_on, adaptive_on, opposite_input_on, subID)
 %% Housekeeping
 %Setting up the screen
 sc=dotsTheScreen.theObject;
-sc.reset('displayIndex', 2); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
+sc.reset('displayIndex', 0); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
 
 %Call GetSecs just to load up the Mex files for getting time, so no delays
 %later
@@ -38,7 +38,7 @@ list{'Stimulus'}{'OddFreq'} = oddf;
 list{'Stimulus'}{'ProbabilityOdd'} = p_odd;
 
 %Subject ID
-subj_id = input('Subject ID: ','s');
+subj_id = subID;
 
 %Sound player
     player = dotsPlayableNote();
@@ -73,14 +73,28 @@ subj_id = input('Subject ID: ','s');
     
     list{'Input'}{'Effort'} = effort;
     
-% EYE TRACKER
-    list{'Eye'}{'Left'} = [];
-    list{'Eye'}{'Right'} = [];
-    list{'Eye'}{'Time'} = [];
-    list{'Eye'}{'RawTime'} = [];
-    list{'Eye'}{'SynchState'} = [];
+% EYELINK  
+    list{'Eyelink'}{'SamplingFreq'} = 1000; %Check actual device sampling frequency in later version
+    list{'Eyelink'}{'Fixtime'} = interval;
+    screensize = get(0, 'MonitorPositions');
+    screensize = screensize(1, [3, 4]);
+    centers = screensize/2;
+    list{'Eyelink'}{'Centers'} = centers;
+    list{'Eyelink'}{'Invalid'} = -32768;
     
-    list{'Eye'}{'Fixtime'} = interval*60; %fixation time in terms of sample number
+    %Setting windows for fixation:
+    window_width = 0.3*screensize(1);
+    window_height = 0.3*screensize(2);
+    
+    xbounds = [centers(1) - window_width/2, centers(1) + window_width/2];
+    ybounds = [centers(2) - window_height/2, centers(2) + window_height/2];
+    
+    list{'Eyelink'}{'XBounds'} = xbounds;
+    list{'Eyelink'}{'YBounds'} = ybounds;
+    
+    %List items used for recording
+    list{'Eyelink'}{'Playtimes'} = zeros(1,length(stimvc));
+    
     
 % DISTRACTOR
 % adds distraction tones throughout task
@@ -120,7 +134,7 @@ list{'Stimulus'}{'Playtimes'} = zeros(1,trials); %Store sound player timestamps
 list{'Stimulus'}{'Playfreqs'} = zeros(1,trials); %Store frequencies played
 
 list{'Input'}{'Choices'} = zeros(1,trials); %Storing if subject pressed the buttons required
-list{'Input'}{'Corrects'} = ones(1,trials)*-1; %Storing correctness of answers. Initialized to 33 so we know if there was no input during a trial with 33.
+list{'Input'}{'Corrects'} = ones(1,trials)*-33; %Storing correctness of answers. Initialized to 33 so we know if there was no input during a trial with 33.
 list{'Timestamps'}{'Response'} = zeros(1,trials); %Storing subject response timestamp
 %% Input
 gp = dotsReadableHIDGamepad(); %Set up gamepad object
@@ -269,10 +283,6 @@ list{'graphics'}{'fixation diameter'} = 0.4;
 readui = topsCallList();
 readui.addCall({@read, ui}, 'Read the UI');
 
-% Read eyetracker data constant call
-readgaze = topsCallList();
-readgaze.addCall({@gazelog, list}, 'Read gaze');
-
 %% Runnables
 
 if adaptive_on == 1
@@ -286,7 +296,7 @@ end
 %STATE MACHINE
 Machine = topsStateMachine();
 stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                 'CheckReady', {}, {@checkFixation list}, {}, 0, 'CheckReady';
+                 'CheckReady', {@checkFixation list}, {}, {}, 0, 'CheckReady';
                  'Stimulus', {stimulusfunc list}, {}, {}, interval, 'Exit';
                  'Exit', {checkfunc list}, {}, {}, 0, ''};
              
@@ -295,7 +305,7 @@ Machine.addMultipleStates(stimList);
 contask = topsConcurrentComposite();
 contask.addChild(ensemble);
 contask.addChild(readui);
-contask.addChild(readgaze);
+
 contask.addChild(Machine);
 
 if distractor_on == 1
@@ -488,11 +498,13 @@ function queststim(list)
     player.frequency = frequency;
     player.prepareToPlay;
 
+    playtime = mglGetSecs;
     player.play;
+    Eyelink('Message', num2str(mglGetSecs)); %Send timestamp to Eyelink before playing
 
     %Logging times and frequencies
     playtimes = list{'Stimulus'}{'Playtimes'};
-    playtimes(counter) = player.lastPlayTime;
+    playtimes(counter) = playtime;
     list{'Stimulus'}{'Playtimes'} = playtimes;
     
     playfreqs = list{'Stimulus'}{'Playfreqs'};
@@ -521,11 +533,13 @@ function playstim(list)
     player.frequency = frequency;
     player.prepareToPlay;
 
+    playtime = mglGetSecs;
     player.play;
+    Eyelink('Message', num2str(mglGetSecs)); %Send timestamp to Eyelink before playing
 
     %Logging times and frequencies
     playtimes = list{'Stimulus'}{'Playtimes'};
-    playtimes(counter) = player.lastPlayTime;
+    playtimes(counter) = playtime;
     list{'Stimulus'}{'Playtimes'} = playtimes;
     
     playfreqs = list{'Stimulus'}{'Playfreqs'};
@@ -533,60 +547,74 @@ function playstim(list)
     list{'Stimulus'}{'Playfreqs'} = playfreqs;
 end
 
-function gazelog(list)
-    %Reading gaze
-    [lefteye, righteye, timestamp, ~] = tetio_readGazeData;
-
-    %Storing/Organizing data
-    if ~isempty(lefteye) || ~isempty(righteye)
+function checkFixation(list)
+    %Import values
+    fixtime = list{'Eyelink'}{'Fixtime'};
+    fs = list{'Eyelink'}{'SamplingFreq'};
+    invalid = list{'Eyelink'}{'Invalid'};
+    xbounds = list{'Eyelink'}{'XBounds'};
+    ybounds = list{'Eyelink'}{'YBounds'};
     
-        leftx = lefteye(:,7); %column 7 is 2D X eye position
-        lefty = lefteye(:,8); %column 8 is 2D y eye position
-        leftp = lefteye(:,12); %column 12 is eye pupil diameter
-        leftv = lefteye(:,13); %this column is validity code
-
-        rightx = righteye(:,7);
-        righty = righteye(:,8);
-        rightp = righteye(:,12);
-        rightv = righteye(:,13);
-
-        list{'Eye'}{'Left'} = [list{'Eye'}{'Left'}; leftx lefty leftp leftv];
-        list{'Eye'}{'Right'} = [list{'Eye'}{'Right'}; rightx righty rightp rightv];
-        list{'Eye'}{'Time'}= [list{'Eye'}{'Time'}; timestamp];
-        list{'Eye'}{'RawTime'} = [list{'Eye'}{'RawTime'}; timestamp];  
-        list{'Eye'}{'SynchState'} = [list{'Eye'}{'SynchState'}; tetio_clockSyncState]; 
-    end
-end
-
-function output = checkFixation(list)
-    %Initialize output
-    output = 'CheckReady'; %This causes a State Machine loop until fixation is achieved
-
-    %Get parameters for holding fixation
-    fixtime = list{'Eye'}{'Fixtime'}*60; %converting from seconds to samples
-
-    %Get eye data for left eye
-    eyedata = list{'Eye'}{'Left'};
-    if ~isempty(eyedata) && length(eyedata) > fixtime + 1
-        eyedata = eyedata(end-fixtime:end, :); %Cutting data to only the last 'fixtime' time window
-        eyeX = eyedata(:,1);
-        eyeY = eyedata(:,2);
-
-        %cleaning up signal to let us tolerate blinks
-        if any(eyeX > 0) && any(eyeY > 0)
-            eyeX(eyeX < 0) = [];
-            eyeY(eyeY < 0) = [];
+    fixms = fixtime*fs; %Getting number of fixated milliseconds needed
+    
+    %Initializing the structure that temporarily holds eyelink sample data
+    eyestruct = Eyelink( 'NewestFloatSample');
+    
+    fixed = 0;
+    while fixed == 0
+        %Ensuring eyestruct does not get prohibitively large. 
+        %After 30 seconds it will clear and restart. This may cause longer
+        %than normal fixation time required in the case that a subject
+        %begins fixating close to this 30 second mark. 
+        if length(eyestruct) > 30000
+            eyestruct = Eyelink( 'NewestFloatSample');
         end
-
-        %Seeing if there's fixation (X Y values between 0.45 and 0.55
-        fixX = eyeX > 0.30 & eyeX < 0.70;
-        fixY = eyeY > 0.30 & eyeY < 0.70;
-
-        if all(fixY) && all(fixX)
-            output = 'Stimulus'; %Send output to get State Machine to produce stimulus
+        
+        %Adding new samples to eyestruct
+        newsample = Eyelink( 'NewestFloatSample');
+        if newsample.time ~= eyestruct(end).time %Making sure we don't get redundant samples
+            eyestruct(end+1) = newsample;
         end
+        
+        %Program cannot collect data as fast as Eyelink provides, so it's
+        %necessary to check times for samples to get a good approximation
+        %for how long a subject is fixating
+        endtime = eyestruct(end).time;
+        start_idx = find(([eyestruct.time] <= endtime - fixms), 1, 'last');
+        
+        if ~isempty(start_idx)
+            lengthreq = length(start_idx:length(eyestruct));
+            start_idx
+        else
+            lengthreq = Inf;
+        end
+        
+        whicheye = ~(eyestruct(end).gx == invalid); %logical index of correct eye
+        
+        if sum(whicheye) < 1
+            whicheye = 1:2 < 2; %Defaults to collecting from left eye if both have bad data
+        end
+        
+        xcell = {eyestruct.gx};
+        ycell = {eyestruct.gy};
+        
+        xgaze = cellfun(@(x) x(whicheye), xcell);
+        ygaze = cellfun(@(x) x(whicheye), ycell);
+        
+        
+        if length(xgaze) >= lengthreq;
+            if all(xgaze(start_idx :end)  >= xbounds(1) & ... 
+                    xgaze(start_idx :end) <= xbounds(2)) && ...
+                    all(ygaze(start_idx :end) >= ybounds(1) & ...
+                    ygaze(start_idx :end) <= ybounds(2))
+                
+                fixed = 1;
+                eyestruct = [];
+            end
+        end
+        
     end
-
+    
 end
 
 function distractfunc(list)
