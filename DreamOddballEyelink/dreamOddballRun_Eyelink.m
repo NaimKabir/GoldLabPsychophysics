@@ -1,11 +1,15 @@
 %dreamOddballRun
+clear all, close all;
+
 [subID, EDFfilename] = MKEyelinkCalibrate();
 
-[task, list] = dreamOddballConfig_Eyelink(0,0,0, subID);
+%%
+
+[task, list] = dreamOddballConfig_Eyelink(0,0,1, subID);
 %First argument is whether distractor is on(1) or off(0),
 %Second argument is whether adapative difficulty is on(1) or off(0),
-%Third argument is whether button is pressed for odd frequencies (1) or for
-%standard frequencies(0)
+%Third argument is whether button is pressed for odd frequencies (0) or for
+%standard frequencies(1)
 
 dotsTheScreen.openWindow();
 task.run
@@ -18,7 +22,7 @@ dotsTheScreen.closeWindow();
 
     try
         fprintf('Receiving data file ''%s''\n', EDFfilename );
-        status=Eyelink('ReceiveFile');
+        status=Eyelink('ReceiveFile', EDFfilename);
         if status > 0
             fprintf('ReceiveFile status %d\n', status);
         end
@@ -51,7 +55,6 @@ dotsTheScreen.closeWindow();
 % Data.EyeR = list{'Eye'}{'Right'};
 % Data.RawTime = list{'Eye'}{'RawTime'};
 
-
 Data.StandardFreq = list{'Stimulus'}{'StandardFreq'};
 Data.OddFreq = list{'Stimulus'}{'OddFreq'};
 Data.ProbabilityOdd = list{'Stimulus'}{'ProbabilityOdd'};
@@ -65,7 +68,7 @@ Data.ChoiceTimestamps = list{'Timestamps'}{'Response'}; %Storing subject respons
 
 %% Saving
 
-save(list{'Subject'}{'Savename'},'list')
-save(['Data_' list{'Subject'}{'Savename'}], 'Data') 
+save([list{'Subject'}{'Savename'} '.mat'],'list')
+save([ list{'Subject'}{'Savename'} '_Data' '.mat'], 'Data') 
 
 Eyelink('Shutdown');

@@ -354,13 +354,13 @@ function startsave(list)
     %creates a viable savename for use outside of function, to save file
     ID = list{'Subject'}{'ID'};
     appendno = 0;
-    savename = [ID num2str(appendno) '_DreamOddball'];
+    savename = [ID num2str(appendno) '_2AFC'];
     
     %Checking if file already exists, if so, changes savename by appending
     %a number
     while exist([savename '.mat'])
         appendno = appendno + 1;
-        savename = [ID num2str(appendno) '_DreamOddball'];
+        savename = [ID num2str(appendno) '_2AFC'];
     end
     
     list{'Subject'}{'Savename'} = savename;

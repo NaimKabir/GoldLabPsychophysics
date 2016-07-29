@@ -1,8 +1,9 @@
 %% Run Jae2AFCFixed --WITH EYELINK!
+clear all, close all;
 
 [subID, EDFfilename] = MKEyelinkCalibrate();
 
-
+%%
 [task, list] = Jae2AFCFixed_Eyelink(subID);
 
 dotsTheScreen.openWindow();
@@ -16,7 +17,7 @@ dotsTheScreen.closeWindow();
 
     try
         fprintf('Receiving data file ''%s''\n', EDFfilename );
-        status=Eyelink('ReceiveFile');
+        status=Eyelink('ReceiveFile', EDFfilename);
         if status > 0
             fprintf('ReceiveFile status %d\n', status);
         end
@@ -57,7 +58,7 @@ Data.StateList = list{'Stimulus'}{'Statelist'};
 
 %% Saving
 
-save(list{'Subject'}{'Savename'},'list')
-save(['Data_' list{'Subject'}{'Savename'}], 'Data') 
+save([list{'Subject'}{'Savename'} '.mat'],'list')
+save([ list{'Subject'}{'Savename'} '_Data' '.mat'], 'Data') 
 
     Eyelink('Shutdown');
