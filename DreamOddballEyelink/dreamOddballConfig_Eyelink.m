@@ -12,6 +12,9 @@ GetSecs;
 %% Setting up a list structure
 list = topsGroupedList;
 
+%Feedback on? 0 for no, 1 for yes
+feedback_on = 1;
+
 %Oddball Task Parameters
 if nargin < 1
     distractor_on = 0;
@@ -235,13 +238,24 @@ list{'graphics'}{'fixation diameter'} = 0.4;
     checkTexture1.textureMakerFevalable = {@kameshTextureMaker,...
     checkerH,checkerW,[],[],isoColor1,isoColor2};
 
-    % a fixation point
-    fp = dotsDrawableTargets();
+%     % a fixation point
+%     fp = dotsDrawableTargets();
+%     fp.isVisible = true;
+%     fp.colors = list{'graphics'}{'gray'};
+%     fp.width = list{'graphics'}{'fixation diameter'};
+%     fp.height = list{'graphics'}{'fixation diameter'};
+%     list{'graphics'}{'fixation point'} = fp;
+    
+    % replacing fixation point with fixation cross
+    fp = dotsDrawableText();
     fp.isVisible = true;
-    fp.colors = list{'graphics'}{'gray'};
-    fp.width = list{'graphics'}{'fixation diameter'};
-    fp.height = list{'graphics'}{'fixation diameter'};
-    list{'graphics'}{'fixation point'} = fp;
+    fp.color = list{'graphics'}{'gray'};
+    fp.typefaceName = 'Calibri';
+    fp.fontSize = 68;
+    fp.isBold = 0;
+    fp.string = '+';
+    fp.x = 0;
+    fp.y = 0;
     
     %Text prompts
     readyprompt = dotsDrawableText();
@@ -288,6 +302,7 @@ readui.addCall({@read, ui}, 'Read the UI');
 
 %% Runnables
 
+%Setting various anonymous functions based on exp. conditions
 if adaptive_on == 1
     checkfunc = @(x) checkquest(x);
     stimulusfunc = @(x) queststim(x); 
@@ -296,12 +311,23 @@ else
     stimulusfunc = @(x) playstim(x); %Can also be queststim(x) if adaptive difficulty = 1
 end
 
+if feedback_on
+    spin = @(index) ensemble.setObjectProperty('rotation', 45, index);
+    despin = @(index) ensemble.setObjectProperty('rotation', 0, index);
+else
+    spin = @(index) ensemble.setObjectProperty('rotation', 0, index);
+    despin = @(index) ensemble.setObjectProperty('rotation', 0, index);
+end
+
 %STATE MACHINE
 Machine = topsStateMachine();
 stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                 'CheckReady', {}, {}, {@checkFixation list}, 0, 'Stimulus';
-                 'Stimulus', {stimulusfunc list}, {}, {}, 0, 'Exit';
-                 'Exit', {checkfunc list}, {}, {}, 0, ''};
+                 'CheckReady', {}, {}, {@checkReady list}, 0, 'Stimulus';
+                 'Stimulus', {stimulusfunc list}, {}, {}, 0, 'CheckFix';
+                 'CheckFix', {@checkFixation list}, {}, {}, 0, 'Feedback';
+                 'Feedback', {}, {checkfunc list}, {}, 0, '';
+                 'Correct', {despin dot}, {}, {}, 0, '';
+                 'Incorrect', {spin dot}, {}, {}, 0, ''};
              
 Machine.addMultipleStates(stimList);
 
@@ -321,7 +347,9 @@ maintask.addChild(contask);
 end
 
 %% Accessory Functions
-function checkquest(list)
+function string = checkquest(list)
+    string = 'Incorrect'; %Defaulting string to incorrect. 
+
     %import important list objects
     counter = list{'Stimulus'}{'Counter'};
     reactionwindow = list{'Input'}{'ReactionWindow'};
@@ -374,8 +402,10 @@ function checkquest(list)
     
     if isPattern && freqlist(counter) == checkfreq %If they pressed button, was it a good press?
         correct = 1;
+        string = 'Correct';
     elseif ~isPattern && freqlist(counter) ~= checkfreq %Did they avoid pressing for the right reasons?
         correct = 1;
+        string = 'Correct';
     else
         correct = 0;
     end
@@ -406,7 +436,9 @@ function checkquest(list)
     fprintf('Trial %d complete. \n', counter);
 end
 
-function checkinput(list)
+function string = checkinput(list)
+    string = 'Incorrect';
+
     %import important list objects
     counter = list{'Stimulus'}{'Counter'};
     reactionwindow = list{'Input'}{'ReactionWindow'};
@@ -458,8 +490,10 @@ function checkinput(list)
     
     if isPattern && freqlist(counter) == checkfreq %If they pressed button, was it a good press?
         correct = 1;
+        string = 'Correct';
     elseif ~isPattern && freqlist(counter) ~= checkfreq %Did they avoid pressing for the right reasons?
         correct = 1;
+        string = 'Correct';
     else
         correct = 0;
     end
@@ -634,6 +668,14 @@ function checkFixation(list)
     
     disp('Fixated')
     
+end
+
+function checkReady(list)
+    if list{'Stimulus'}{'Counter'} < 1
+        checkFixation(list);
+    else
+        return
+    end
 end
 
 function distractfunc(list)

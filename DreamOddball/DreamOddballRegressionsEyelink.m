@@ -1,7 +1,7 @@
 %% DreamOddball Regressions
 % By M.Kabir
 clear all
-subID = []; %Write the Two letter string here to pool subject data, leave empty to pool all subjects
+subID = 'IJ'; %Write the Two letter string here to pool subject data, leave empty to pool all subjects
 
 files = dir(['0Fused_' subID '*.mat']); 
 X_matrix = [];
@@ -26,7 +26,7 @@ for z = 1:length(files)
     % Setting window sizes for pre and post stimulus clips of the pupil 
     % waveform.
     prewindow = 1000;
-    postwindow = 2000;
+    postwindow = 3000;
 
     % Collecting pre and postpackets
     pre = zeros(length(stim_idx), prewindow);
@@ -105,11 +105,12 @@ for z = 1:length(files)
     distractvector = ones(length(premeans),1) * Data.DistractorOn;
     
     %Extras
-    incorrectmotors = cellfun(@(x) size(x, 1), Data.trueMotorResponses);
-    incorrectmotors(incorrectmotors >2) = 0;
+    rtype = sum(motors > 0) > length(motors)/2;
+    rtype = ~rtype;
+    responsetype = zeros(length(premeans), 1) + rtype;
     
     %Finalizing features matrix
-    X = [intercept, premeans, motors, oddball', freqdiffs', distractvector, incorrectmotors];
+    X = [intercept, premeans, motors, oddball', freqdiffs', distractvector, responsetype];
     
     
     X_matrix = [X_matrix; X];
@@ -151,7 +152,7 @@ for n = 2:size(betas,2)
 end
 
 legend('Mean Pre-Stimulus', 'Motor Response', 'Oddball', ... 
-        'Incorrect Motor Responses');
+        'Response Type');
 title(['Subject: ' subID])
 xlabel('Timebin (each bin is 200 samples, slid 50 samples at a time)')
 ylabel('Beta-Coefficient Value')
