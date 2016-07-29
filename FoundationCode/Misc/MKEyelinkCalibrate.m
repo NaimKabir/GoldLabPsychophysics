@@ -8,12 +8,12 @@ function [subID, savename] = MKEyelinkCalibrate()
 
 %% Creating a Non Redundant Savefile name
 subID = input('Subject ID is: ', 's');
-savename = [subID '.edf'];
+appendno = 0;
+savename = [subID num2str(appendno) '.edf'];
 
-appendno = 1;
 while exist(savename)
-    savename = [ID num2str(appendno) '.edf'];
     appendno = appendno + 1;
+    savename = [subID num2str(appendno) '.edf'];
 end
 
 %% Running calib and starting an edf file + recording

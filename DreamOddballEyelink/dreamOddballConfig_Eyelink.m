@@ -3,7 +3,7 @@ function [maintask, list] = dreamOddballConfig(distractor_on, adaptive_on, oppos
 %% Housekeeping
 %Setting up the screen
 sc=dotsTheScreen.theObject;
-sc.reset('displayIndex', 0); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
+sc.reset('displayIndex', 1); %change display index to 0 for debug. 1 for full screen. Use >1 for external monitors.
 
 %Call GetSecs just to load up the Mex files for getting time, so no delays
 %later
@@ -39,6 +39,8 @@ list{'Stimulus'}{'ProbabilityOdd'} = p_odd;
 
 %Subject ID
 subj_id = subID;
+list{'Subject'}{'ID'} = subj_id;
+startsave(list);
 
 %Sound player
     player = dotsPlayableNote();
@@ -49,8 +51,9 @@ subj_id = subID;
     list{'Stimulus'}{'Player'} = player;
 
 %INPUT PARAMETERS
-    reactionwindow = 1; %Intertrial interval MUST be larger than this number for task to be robust
-    responsepattern = [4 4 4]; %Pattern is right trigger-pull 3 times
+    reactionwindow = 2; %Intertrial interval MUST be larger than this number for task to be robust
+    responsepattern = [4 2 4]; %Pattern is right trigger-pull 3 times 
+    %(4 is right trigger or J, 2 is Left Trigger or F)
 
     list{'Input'}{'ReactionWindow'} = reactionwindow;
     list{'Input'}{'ResponsePattern'} = responsepattern; 
@@ -296,8 +299,8 @@ end
 %STATE MACHINE
 Machine = topsStateMachine();
 stimList = {'name', 'entry', 'input', 'exit', 'timeout', 'next';
-                 'CheckReady', {@checkFixation list}, {}, {}, 0, 'CheckReady';
-                 'Stimulus', {stimulusfunc list}, {}, {}, interval, 'Exit';
+                 'CheckReady', {}, {}, {@checkFixation list}, 0, 'Stimulus';
+                 'Stimulus', {stimulusfunc list}, {}, {}, 0, 'Exit';
                  'Exit', {checkfunc list}, {}, {}, 0, ''};
              
 Machine.addMultipleStates(stimList);
@@ -554,6 +557,7 @@ function playstim(list)
 end
 
 function checkFixation(list)
+    disp('Checking Fix')
     %Import values
     fixtime = list{'Eyelink'}{'Fixtime'};
     fs = list{'Eyelink'}{'SamplingFreq'};
@@ -582,17 +586,6 @@ function checkFixation(list)
             eyestruct(end+1) = newsample;
         end
         
-        %Program cannot collect data as fast as Eyelink provides, so it's
-        %necessary to check times for samples to get a good approximation
-        %for how long a subject is fixating
-        endtime = eyestruct(end).time;
-        start_idx = find(([eyestruct.time] <= endtime - fixms), 1, 'last');
-        
-        if ~isempty(start_idx)
-            lengthreq = length(start_idx:length(eyestruct));
-        else
-            lengthreq = Inf;
-        end
         
         whicheye = ~(eyestruct(end).gx == invalid); %logical index of correct eye
         
@@ -603,9 +596,28 @@ function checkFixation(list)
         xcell = {eyestruct.gx};
         ycell = {eyestruct.gy};
         
+        time = [eyestruct.time];
         xgaze = cellfun(@(x) x(whicheye), xcell);
         ygaze = cellfun(@(x) x(whicheye), ycell);
         
+        %cleaning up signal to let us tolerate blinks
+        if any(xgaze > 0) && any(ygaze > 0)
+            xgaze(xgaze < 0) = [];
+            ygaze(ygaze < 0) = [];
+            time(xgaze < 0) = []; %Applying same deletion to time vector
+        end
+        
+        %Program cannot collect data as fast as Eyelink provides, so it's
+        %necessary to check times for samples to get a good approximation
+        %for how long a subject is fixating
+        endtime = time(end);
+        start_idx = find((time <= endtime - fixms), 1, 'last');
+        
+        if ~isempty(start_idx)
+            lengthreq = length(start_idx:length(xgaze));
+        else
+            lengthreq = Inf;
+        end
         
         if length(xgaze) >= lengthreq;
             if all(xgaze(start_idx :end)  >= xbounds(1) & ... 
@@ -619,6 +631,8 @@ function checkFixation(list)
         end
         
     end
+    
+    disp('Fixated')
     
 end
 
@@ -644,4 +658,21 @@ function distractfunc(list)
     
     %Store time
     list{'Distractor'}{'Playtimes'} = [list{'Distractor'}{'Playtimes'}, player.lastPlayTime];
+end
+
+
+function startsave(list)
+    %creates a viable savename for use outside of function, to save file
+    ID = list{'Subject'}{'ID'};
+    appendno = 0;
+    savename = [ID num2str(appendno) '_DreamOddball'];
+    
+    %Checking if file already exists, if so, changes savename by appending
+    %a number
+    while exist([savename '.mat'])
+        appendno = appendno + 1;
+        savename = [ID num2str(appendno) '_DreamOddball'];
+    end
+    
+    list{'Subject'}{'Savename'} = savename;
 end

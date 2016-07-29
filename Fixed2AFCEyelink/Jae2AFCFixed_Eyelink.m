@@ -353,14 +353,14 @@ end
 function startsave(list)
     %creates a viable savename for use outside of function, to save file
     ID = list{'Subject'}{'ID'};
-    savename = [ID '_Audio2AFC_list.mat'];
+    appendno = 0;
+    savename = [ID num2str(appendno) '_DreamOddball'];
     
     %Checking if file already exists, if so, changes savename by appending
     %a number
-    appendno = 1;
-    while exist(savename)
-        savename = [ID num2str(appendno) '_Audio2AFC_list.mat'];
+    while exist([savename '.mat'])
         appendno = appendno + 1;
+        savename = [ID num2str(appendno) '_DreamOddball'];
     end
     
     list{'Subject'}{'Savename'} = savename;
@@ -395,17 +395,6 @@ function checkFixation(list)
             eyestruct(end+1) = newsample;
         end
         
-        %Program cannot collect data as fast as Eyelink provides, so it's
-        %necessary to check times for samples to get a good approximation
-        %for how long a subject is fixating
-        endtime = eyestruct(end).time;
-        start_idx = find(([eyestruct.time] <= endtime - fixms), 1, 'last');
-        
-        if ~isempty(start_idx)
-            lengthreq = length(start_idx:length(eyestruct));
-        else
-            lengthreq = Inf;
-        end
         
         whicheye = ~(eyestruct(end).gx == invalid); %logical index of correct eye
         
@@ -416,8 +405,28 @@ function checkFixation(list)
         xcell = {eyestruct.gx};
         ycell = {eyestruct.gy};
         
+        time = [eyestruct.time];
         xgaze = cellfun(@(x) x(whicheye), xcell);
         ygaze = cellfun(@(x) x(whicheye), ycell);
+        
+        %cleaning up signal to let us tolerate blinks
+        if any(xgaze > 0) && any(ygaze > 0)
+            xgaze(xgaze < 0) = [];
+            ygaze(ygaze < 0) = [];
+            time(xgaze < 0) = [];
+        end
+        
+        %Program cannot collect data as fast as Eyelink provides, so it's
+        %necessary to check times for samples to get a good approximation
+        %for how long a subject is fixating
+        endtime = time(end);
+        start_idx = find((time <= endtime - fixms), 1, 'last');
+        
+        if ~isempty(start_idx)
+            lengthreq = length(start_idx:length(xgaze));
+        else
+            lengthreq = Inf;
+        end
         
         
         if length(xgaze) >= lengthreq;

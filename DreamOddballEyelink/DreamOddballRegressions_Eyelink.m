@@ -1,9 +1,8 @@
 %% DreamOddball Regressions
 % By M.Kabir
 clear all
-subID = 'KN';
 
-files = dir(['0Fused_' '*.mat']); %Ensure only one subject's files are in the current directory!
+files = dir('*.mat'); %Ensure only one subject's files are in the current directory!
 X_matrix = [];
 Y_matrix = [];
 
